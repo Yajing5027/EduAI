@@ -92,16 +92,6 @@ If you wire a backend API to publish surveys or return generated questions, the 
 
 When publishing from the UI, the client writes the `questions` array into the in-memory `SURVEY_DATA` structure so the results page renders immediately.
 
-## How judges should evaluate
-
-- **Functionality**: the preview → publish → results mapping works reliably for different `Number of questions` values.
-- **User experience**: generation latency, clarity of preview, and publish flow are intuitive.
-- **Code clarity**: core logic resides in `frontend/app.js` with clear functions: `generatePreview()`, `publishSurvey()`, `loadSurveyResult()`.
-- **Extensibility**: assess how easily a real backend can replace the in-memory `SURVEY_DATA` object and persist surveys.
-- **Security & privacy**: verify no API keys are committed and that `.env` is respected; secrets must be removed from the repository before public presentation.
-
-## Security & privacy notes
-
 - Do not commit API keys. Use environment variables (`GEMINI_API_KEY`) or a secure secrets store. Remove any `.env` files containing secrets from the repository and rotate exposed keys.
 - The current demo uses client-side in-memory storage for surveys — for production, persist surveys and responses in a controlled database and enforce authentication.
 
