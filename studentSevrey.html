@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduAI — Student Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="page">
+
+    <header class="header">
+      <div class="header-logo">
+        <div class="logo-mark">E</div>
+        <span class="logo-name">EduAI</span>
+      </div>
+    </header>
+
+    <!-- STEP 1: ENTER NAME -->
+    <div id="step-name" class="step active">
+      <div class="card center-card">
+        <div class="survey-title" id="survey-title-name">Bio 101 — Week 5</div>
+        <div class="survey-sub">Enter your name to begin</div>
+        <div class="name-field">
+          <input type="text" id="student-name" placeholder="Your full name" autocomplete="off" />
+        </div>
+        <button class="btn btn-accent full-width" onclick="startSurvey()">Start survey →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: QUESTIONS -->
+    <div id="step-questions" class="step">
+      <div class="survey-header">
+        <div>
+          <div class="survey-title" id="survey-title-q">Bio 101 — Week 5</div>
+          <div class="survey-sub">Rate your understanding of each topic from 1 (not at all) to 10 (fully understood)</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span id="prog-done">0</span> / <span id="prog-total">5</span> rated
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="questions-list"></div>
+
+      <div class="submit-row">
+        <button class="btn btn-accent" id="submit-btn" onclick="submitSurvey()" disabled>Submit responses →</button>
+        <span class="submit-note" id="submit-note">Rate all questions to submit</span>
+      </div>
+    </div>
+
+    <!-- STEP 3: DONE -->
+    <div id="step-done" class="step">
+      <div class="card center-card">
+        <div class="done-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="15" fill="#E8F7EF" stroke="#1E7B4B" stroke-width="1.5"/>
+            <path d="M9 16l5 5 9-10" stroke="#1E7B4B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="survey-title">Responses submitted!</div>
+        <div class="survey-sub" id="done-sub">Thanks, your teacher can now see your responses.</div>
+
+        <div class="summary-list" id="summary-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="survey.js"></script>
+</body>
+</html>
