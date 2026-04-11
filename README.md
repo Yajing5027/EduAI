@@ -224,7 +224,7 @@ PowerPoint support requires Python 3 and pip install python-pptx
 
 
 
-============================================================
+
 SMART CURVE | QUICK-ANALYSIS EDITION (MANUAL ENTRY)
 ============================================================
 
