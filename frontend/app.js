@@ -14,6 +14,9 @@ const SAMPLE_QUESTIONS = [
   'How does the Calvin cycle use energy from ATP and NADPH?'
 ];
 
+let CURRENT_PREVIEW_QUESTIONS = [];
+let LATEST_PUBLISHED_SURVEY_KEY = null;
+
 const SURVEY_DATA = {
   wk5: {
     title: 'Week 5 — Photosynthesis',
@@ -24,6 +27,13 @@ const SURVEY_DATA = {
       { name: 'C3 vs C4 plants', score: 6.8 },
       { name: 'Chlorophyll role', score: 5.2 },
       { name: 'Water splitting', score: 4.9 }
+    ],
+    questions: [
+      'How does ATP synthase use the proton gradient in light reactions?',
+      'What is the function of chlorophyll in capturing light energy?',
+      'How do C3 and C4 pathways differ in photorespiration?',
+      'Why is photolysis of water essential for photosystem II?',
+      'How are ATP and NADPH consumed during the Calvin cycle?'
     ],
     aiWell: 'Students demonstrated strong understanding of the light reactions and the Calvin cycle. Most could explain the role of ATP and NADPH accurately.',
     aiRevisit: 'The roles of chlorophyll and water splitting were frequently misunderstood. Consider a visual walkthrough of the Z-scheme in the next session.'
@@ -38,6 +48,13 @@ const SURVEY_DATA = {
       { name: 'Cell cycle checkpoints', score: 4.8 },
       { name: 'Cytokinesis', score: 5.1 }
     ],
+    questions: [
+      'Which phase of mitosis aligns chromosomes at the metaphase plate?',
+      'What is one key difference between mitosis and meiosis I?',
+      'How does spindle attachment affect chromosome segregation?',
+      'Why are cell-cycle checkpoints critical for genomic stability?',
+      'How does cytokinesis differ between plant and animal cells?'
+    ],
     aiWell: 'Students showed a solid grasp of the mitosis stages in sequence.',
     aiRevisit: 'Cell cycle checkpoints and the differences between mitosis and meiosis need reinforcement. Several students confused the two processes entirely.'
   },
@@ -50,6 +67,13 @@ const SURVEY_DATA = {
       { name: 'Macromolecules', score: 8.2 },
       { name: 'Scientific method', score: 7.9 },
       { name: 'Enzyme function', score: 6.3 }
+    ],
+    questions: [
+      'What are the three core statements of classical cell theory?',
+      'How do prokaryotic and eukaryotic cells differ structurally?',
+      'What are the four major classes of biological macromolecules?',
+      'Why is hypothesis testing central to the scientific method?',
+      'How does activation energy relate to enzyme function?'
     ],
     aiWell: 'Excellent comprehension across almost all introductory topics. Students are well-prepared for more advanced content.',
     aiRevisit: 'Enzyme function and the concept of activation energy may need a brief revisit before covering metabolism.'
@@ -71,7 +95,10 @@ function switchScreen(id) {
   const navItem = document.querySelector(`.nav-item[data-screen="${id}"]`);
   if (navItem) navItem.classList.add('active');
   document.getElementById('topbar-title').textContent = SCREEN_TITLES[id] || id;
-  if (id === 'survey-results') loadSurveyResult('wk5');
+  if (id === 'survey-results') {
+    const selectedKey = document.getElementById('survey-select')?.value || LATEST_PUBLISHED_SURVEY_KEY || 'wk5';
+    loadSurveyResult(selectedKey);
+  }
   if (id === 'grades') resetGrades();
 }
 
@@ -87,9 +114,14 @@ function generatePreview() {
   const label = document.getElementById('class-lbl').value.trim() || 'Survey';
   if (!content) { alert('Please paste some slide content first.'); return; }
   document.getElementById('sc-label').textContent = label;
+
+  const requestedCount = parseInt(document.getElementById('nq')?.value, 10);
+  const questionCount = Number.isFinite(requestedCount) ? Math.max(1, Math.min(20, requestedCount)) : 5;
+  CURRENT_PREVIEW_QUESTIONS = Array.from({ length: questionCount }, (_, i) => SAMPLE_QUESTIONS[i] || `Generated question ${i + 1}`);
+
   const container = document.getElementById('preview-questions');
   container.innerHTML = '';
-  SAMPLE_QUESTIONS.forEach((q, i) => {
+  CURRENT_PREVIEW_QUESTIONS.forEach((q, i) => {
     const div = document.createElement('div');
     div.className = 'preview-q';
     div.innerHTML = `
@@ -107,8 +139,38 @@ function generatePreview() {
 
 function publishSurvey() {
   const label = document.getElementById('sc-label').textContent;
-  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const slug = (label || 'survey').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const generatedQuestions = CURRENT_PREVIEW_QUESTIONS.length ? CURRENT_PREVIEW_QUESTIONS.slice() : SAMPLE_QUESTIONS.slice(0, 5);
+  let surveyKey = slug || `survey-${Date.now()}`;
+  if (SURVEY_DATA[surveyKey]) surveyKey = `${surveyKey}-${Date.now().toString().slice(-4)}`;
+
+  SURVEY_DATA[surveyKey] = {
+    title: label,
+    responses: 0,
+    avg: 0,
+    well: 0,
+    revisit: generatedQuestions.length,
+    topics: generatedQuestions.map((q, i) => ({
+      name: q.length > 28 ? `${q.slice(0, 28)}...` : q,
+      score: 0
+    })),
+    questions: generatedQuestions,
+    aiWell: 'Survey has been published. Waiting for responses from students.',
+    aiRevisit: 'No response data yet. Insights will appear after students submit answers.'
+  };
+
+  const surveySelect = document.getElementById('survey-select');
+  if (surveySelect) {
+    const option = document.createElement('option');
+    option.value = surveyKey;
+    option.textContent = label;
+    surveySelect.insertBefore(option, surveySelect.firstChild);
+    surveySelect.value = surveyKey;
+  }
+
+  LATEST_PUBLISHED_SURVEY_KEY = surveyKey;
   document.getElementById('share-link').textContent = `http://localhost:3000/studentSurvey.html`;
+  renderDashboard();
   document.getElementById('sc-step1').style.display = 'none';
   document.getElementById('sc-step2').style.display = 'none';
   document.getElementById('sc-step3').style.display = 'block';
@@ -142,6 +204,26 @@ function loadSurveyResult(key) {
         <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
         <div class="bar-pct" style="color:${color}">${t.score}/10</div>
       </div>`;
+  });
+
+  renderSurveyQuestions(data.questions || []);
+}
+
+function renderSurveyQuestions(questions) {
+  const container = document.getElementById('result-questions');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!questions.length) {
+    container.innerHTML = '<div class="activity-meta">No questions available yet.</div>';
+    return;
+  }
+
+  questions.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'preview-q';
+    div.innerHTML = `<div class="preview-q-text">${i + 1}. ${q}</div>`;
+    container.appendChild(div);
   });
 }
 
