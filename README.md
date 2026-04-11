@@ -29,6 +29,7 @@ Implementation notes (brief)
 - Prototypes for parsing and AI integration exist under `frontend/legacy/` and `Smart Curve/`, but evaluation should focus on the front-end preview→publish→results behavior.
 
 ============================================================
+
 SMART CURVE | QUICK-ANALYSIS EDITION (MANUAL ENTRY)
 ============================================================
 
