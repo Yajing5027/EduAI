@@ -1,13 +1,129 @@
-# Top-one
-# Top-one
-EduAI — Lecture Quiz & Survey Generator
-A full-stack AI-powered web app that helps teachers generate comprehension surveys from lecture slides and collect student understanding ratings in real time.
+# Top-one (EduAI) — Lecture Quiz & Survey Generator
 
-What It Does
+Brief: an AI-assisted web application that converts lecture slides or notes into short, actionable student surveys. It enables teachers to generate comprehension questions, publish a lightweight student-facing survey link, and immediately visualise class-level understanding.
 
-Teacher uploads lecture slides (PDF, PPTX, or TXT) or pastes notes
-Gemini AI generates survey questions asking students to rate their understanding of each concept (1–10)
-Teacher publishes the survey and shares the link with students
+## Executive summary
+
+Top-one (EduAI) is designed for rapid classroom feedback: paste slide text or upload a document, let the AI generate targeted comprehension questions, publish a shareable survey link, then view aggregated student ratings and AI summaries. The repository contains a static frontend prototype, a legacy Node service for document parsing and generation, and a small Flask prototype used during experimentation.
+
+This README is written for technical reviewers and judges: it explains the user flow, architecture, how to run the demo locally, the exact front-end mapping between the question preview and the survey results page, and evaluation criteria to assess functionality, security, and extensibility.
+
+## Quick demo (what judges should try)
+
+1. Open the UI: open [frontend/index.html](frontend/index.html) in a browser or serve the `frontend` folder with a static server.
+2. Go to **Create survey** → paste slide text or notes → set `Number of questions` → click **Generate with Gemini**.
+3. Confirm the generated questions appear in the preview (step 2).
+4. Click **Publish survey** and then open **Survey results**; select the newly published survey in the dropdown — the exact questions from step 2 should appear under **Survey questions**.
+
+This flow demonstrates the required mapping: previewed questions are saved to client state and written into the in-memory `SURVEY_DATA` object so they appear in results immediately after publishing.
+
+## Architecture & design (concise)
+
+- **Frontend (static SPA)**: the UI lives under [frontend/](frontend). Core files:
+    - [frontend/index.html](frontend/index.html) — main UI markup and view containers.
+    - [frontend/app.js](frontend/app.js) — application logic: generation, publish, and results mapping.
+    - [frontend/survey.js](frontend/survey.js) — student-facing survey page logic.
+- **Legacy generation service**: `frontend/legacy/server.js` is a Node/Express prototype used for parsing uploads (PDF/PPTX) and interacting with Google Generative AI in legacy testing.
+- **Prototype backend**: `Smart Curve/app.py` and the root `app.py` are small Flask prototypes used to experiment with alternate generation flows.
+
+Data flow (frontend): `generatePreview()` builds `CURRENT_PREVIEW_QUESTIONS` from the requested `nq` value; `publishSurvey()` persists those questions into `SURVEY_DATA[<surveyKey>].questions`; `loadSurveyResult()` renders them via `renderSurveyQuestions()` into the results view.
+
+## Key features
+
+- **AI-driven question generation**: turn slide text into comprehension questions.
+- **Preview → publish mapping**: number of previewed questions (step 2) becomes the published survey's question set and is visible in Survey Results.
+- **Lightweight student link**: publish produces a shareable link to a student survey page.
+- **Client-side demo-ready**: minimal server dependencies to review the UX and data mapping quickly.
+
+## Quick start — run locally
+
+Static frontend (fast, no install):
+
+```bash
+cd frontend
+python -m http.server 8000
+# Open http://localhost:8000 in your browser
+```
+
+Legacy Node server (document parsing & generation prototype):
+
+```bash
+cd frontend/legacy
+npm install
+npm start
+# Server listens on http://localhost:3000 (see server.js)
+```
+
+Flask prototype (optional):
+
+Windows PowerShell:
+```powershell
+cd "Smart Curve"
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+setx GEMINI_API_KEY "<your_api_key>"
+python app.py
+```
+
+macOS / Linux:
+```bash
+cd "Smart Curve"
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+export GEMINI_API_KEY="<your_api_key>"
+python app.py
+```
+
+Notes: set `GEMINI_API_KEY` in an environment variable or `.env`; the code expects a key named `GEMINI_API_KEY`.
+
+## Integration contract (recommended JSON shape)
+
+If you wire a backend API to publish surveys or return generated questions, the frontend expects a minimal payload like:
+
+```json
+{
+    "title": "Bio 101 — Week 6",
+    "questions": ["Question 1", "Question 2", "Question 3"],
+    "topics": [{ "name": "Topic A", "score": 7.2 }]
+}
+```
+
+When publishing from the UI, the client writes the `questions` array into the in-memory `SURVEY_DATA` structure so the results page renders immediately.
+
+## How judges should evaluate
+
+- **Functionality**: the preview → publish → results mapping works reliably for different `Number of questions` values.
+- **User experience**: generation latency, clarity of preview, and publish flow are intuitive.
+- **Code clarity**: core logic resides in `frontend/app.js` with clear functions: `generatePreview()`, `publishSurvey()`, `loadSurveyResult()`.
+- **Extensibility**: assess how easily a real backend can replace the in-memory `SURVEY_DATA` object and persist surveys.
+- **Security & privacy**: verify no API keys are committed and that `.env` is respected; secrets must be removed from the repository before public presentation.
+
+## Security & privacy notes
+
+- Do not commit API keys. Use environment variables (`GEMINI_API_KEY`) or a secure secrets store. Remove any `.env` files containing secrets from the repository and rotate exposed keys.
+- The current demo uses client-side in-memory storage for surveys — for production, persist surveys and responses in a controlled database and enforce authentication.
+
+## Known limitations
+
+- In-memory survey storage (`SURVEY_DATA`) is ephemeral and exists only in the running page.
+- AI generation is mocked by sample data for offline demos; connecting to the Google Generative API requires a valid `GEMINI_API_KEY` and billing setup.
+- No authentication or multi-teacher tenancy implemented yet.
+
+## Suggested next steps (for production readiness)
+
+- Persist surveys and responses to a database and add a small API layer (REST) for CRUD operations.
+- Add user authentication and role-based access (teacher vs. student).
+- Add end-to-end tests for generate → publish → results flows and basic UI tests.
+- Harden config: ensure keys are read from environment only and secrets are never checked into source control.
+
+## Contact & review notes
+
+For questions or to request a live walkthrough, open an issue in this repository. When reviewing, try the Quick demo steps above and consult these files: [frontend/index.html](frontend/index.html), [frontend/app.js](frontend/app.js), and [frontend/legacy/server.js](frontend/legacy/server.js).
+
+---
+Thank you for reviewing Top-one (EduAI). This README targets judges evaluating the project's design, implementation, demonstrable functionality, and production-readiness.
 Students open the link, rate each topic, and submit
 Teacher views real results — per-topic scores, class average, and an AI-generated summary of what went well and what needs revisiting
 
