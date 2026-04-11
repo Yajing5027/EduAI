@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Curve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --ink-2: #3d3b36;
+    --ink-3: #7a7770;
+    --ink-4: #b5b2aa;
+    --paper: #faf9f6;
+    --paper-2: #f2f0eb;
+    --paper-3: #e8e5de;
+    --accent: #2d6a4f;
+    --accent-light: #d8f3dc;
+    --accent-mid: #74c69d;
+    --warn: #e07a24;
+    --warn-light: #fef3e2;
+    --danger: #c0392b;
+    --danger-light: #fdecea;
+    --blue: #1a5c9e;
+    --blue-light: #deeaf8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Instrument Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(15,14,12,0.08), 0 4px 16px rgba(15,14,12,0.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .logo { display: flex; flex-direction: column; gap: 4px; }
+  .logo-title {
+    font-family: var(--serif);
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+    line-height: 1.1;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .gemini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--ink-4);
+    width: fit-content;
+    margin-top: 8px;
+  }
+  .gemini-dot { width: 6px; height: 6px; border-radius: 50%; background: #4285f4; }
+
+  .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
+  .sidebar-label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+
+  .curve-picker { display: flex; flex-direction: column; gap: 6px; }
+  .curve-opt {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .curve-opt:hover { background: rgba(255,255,255,0.06); }
+  .curve-opt.active { background: rgba(116,198,157,0.15); border-color: var(--accent-mid); }
+  .curve-opt-name { font-size: 13px; font-weight: 500; color: var(--paper); }
+  .curve-opt-formula { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+  .sidebar-stats { display: flex; flex-direction: column; gap: 8px; }
+  .stat-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .stat-label { color: var(--ink-3); }
+  .stat-val { font-weight: 500; color: var(--paper); font-family: var(--mono); }
+  .stat-val.up { color: var(--accent-mid); }
+
+  .analyze-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+    margin-top: auto;
+  }
+  .analyze-btn:hover { opacity: 0.88; }
+  .analyze-btn:active { transform: scale(0.98); }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Main ── */
+  .main { padding: 2.5rem 2rem; display: flex; flex-direction: column; gap: 2rem; overflow: hidden; }
+
+  .page-head { display: flex; flex-direction: column; gap: 6px; }
+  .page-head h1 { font-family: var(--serif); font-size: 32px; letter-spacing: -0.02em; line-height: 1.1; }
+  .page-head p { color: var(--ink-3); font-size: 14px; }
+
+  /* ── Cards ── */
+  .card {
+    background: white;
+    border: 1px solid var(--paper-3);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--paper-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-head h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
+  .card-body { padding: 20px; }
+
+  /* ── Quiz textarea ── */
+  .quiz-textarea {
+    width: 100%;
+    border: 1px solid var(--paper-3);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper);
+    resize: vertical;
+    min-height: 140px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.7;
+  }
+  .quiz-textarea:focus { border-color: var(--accent); }
+
+  /* ── Student grid ── */
+  .student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .student-cell { display: flex; flex-direction: column; gap: 4px; }
+  .student-cell label { font-size: 11px; color: var(--ink-3); font-weight: 500; }
+  .student-input-wrap { position: relative; }
+  .student-score {
+    width: 100%;
+    text-align: center;
+    padding: 8px 6px;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    border: 1px solid var(--paper-3);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .student-score:focus { border-color: var(--accent); }
+  .student-letter {
+    position: absolute;
+    right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; font-weight: 600;
+    color: var(--ink-4);
+  }
+  .add-student {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--ink-3);
+    background: none; border: 1px dashed var(--paper-3);
+    border-radius: var(--radius-sm); padding: 8px 14px;
+    cursor: pointer; margin-top: 12px; transition: color 0.15s, border-color 0.15s;
+  }
+  .add-student:hover { color: var(--ink); border-color: var(--ink-4); }
+  .remove-student {
+    position: absolute; top: -6px; right: -6px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--paper-3); border: none; cursor: pointer;
+    font-size: 10px; color: var(--ink-3); display: none;
+    align-items: center; justify-content: center; line-height: 1;
+  }
+  .student-cell:hover .remove-student { display: flex; }
+
+  /* ── Results ── */
+  .results-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metric {
+    background: var(--paper-2);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+  }
+  .metric-label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .metric-value { font-family: var(--serif); font-size: 28px; letter-spacing: -0.02em; }
+  .metric-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .metric-delta { font-size: 12px; color: var(--accent); font-weight: 500; margin-top: 2px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; border-bottom: 1px solid var(--paper-3); padding: 0 20px; }
+  .tab-btn {
+    padding: 12px 16px;
+    font-size: 13px; font-weight: 500;
+    border: none; background: none; cursor: pointer;
+    color: var(--ink-3);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab-panel { display: none; padding: 20px; }
+  .tab-panel.active { display: block; }
+
+  /* ── Analysis text ── */
+  .analysis-body { font-size: 14px; line-height: 1.8; color: var(--ink-2); }
+  .analysis-body p { margin-bottom: 12px; }
+  .analysis-body p:last-child { margin-bottom: 0; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .tag-green { background: var(--accent-light); color: var(--accent); }
+  .tag-warn { background: var(--warn-light); color: var(--warn); }
+  .tag-blue { background: var(--blue-light); color: var(--blue); }
+  .tag-danger { background: var(--danger-light); color: var(--danger); }
+  .tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* ── Flag list ── */
+  .flag-list { display: flex; flex-direction: column; }
+  .flag-item {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid var(--paper-3); gap: 16px;
+  }
+  .flag-item:last-child { border-bottom: none; }
+  .flag-q { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .flag-issue { font-size: 13px; color: var(--ink-3); }
+  .flag-meta { text-align: right; flex-shrink: 0; }
+  .flag-pct { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--danger); }
+  .flag-pct-label { font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ── Gradebook ── */
+  .grade-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .grade-table th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-3); font-weight: 600;
+    padding: 10px 12px; text-align: left;
+    border-bottom: 1px solid var(--paper-3); background: var(--paper);
+  }
+  .grade-table td { padding: 11px 12px; border-bottom: 1px solid var(--paper-3); }
+  .grade-table tr:last-child td { border-bottom: none; }
+  .grade-table tr:hover td { background: var(--paper-2); }
+  .grade-pill {
+    display: inline-block; width: 26px; height: 26px; border-radius: 50%;
+    text-align: center; line-height: 26px; font-size: 12px; font-weight: 600;
+  }
+  .grade-A { background: var(--accent-light); color: var(--accent); }
+  .grade-B { background: var(--blue-light); color: var(--blue); }
+  .grade-C { background: var(--warn-light); color: var(--warn); }
+  .grade-D { background: #fef0e0; color: #b36200; }
+  .grade-F { background: var(--danger-light); color: var(--danger); }
+  .delta-pos { color: var(--accent); font-weight: 500; font-family: var(--mono); font-size: 13px; }
+  .delta-zero { color: var(--ink-4); font-family: var(--mono); font-size: 13px; }
+
+  /* ── Slider ── */
+  .bonus-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .bonus-row label { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+  .bonus-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .bonus-val { font-family: var(--mono); font-weight: 500; font-size: 15px; min-width: 56px; }
+  .impact-banner {
+    background: var(--accent-light); border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; color: var(--accent);
+    font-weight: 500; margin-bottom: 16px;
+  }
+
+  /* ── Approval ── */
+  .approval-body { display: flex; flex-direction: column; gap: 14px; }
+  .approval-note { font-size: 14px; color: var(--ink-2); line-height: 1.7; }
+  .approval-note strong { color: var(--ink); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 11px;
+    border-radius: var(--radius-sm);
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s;
+    border: 1px solid var(--paper-3);
+    background: white; color: var(--ink);
+  }
+  .btn:hover { opacity: 0.8; }
+  .btn-approve { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-approve.applied { background: var(--ink-3); border-color: var(--ink-3); cursor: default; }
+
+  /* ── Fairness report ── */
+  .fairness-text {
+    font-size: 14px; line-height: 1.9; color: var(--ink-2);
+    border-left: 3px solid var(--accent-mid); padding-left: 16px;
+    font-family: var(--serif); font-style: italic; font-size: 16px;
+  }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,14,12,0.5); z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent-mid);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .loading-text { color: white; font-size: 14px; font-weight: 500; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--ink); color: var(--paper);
+    padding: 12px 18px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 200; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: var(--danger); }
+
+  /* ── Hidden ── */
+  .hidden { display: none !important; }
+
+  /* ── Skeleton ── */
+  .skeleton { background: var(--paper-3); border-radius: 4px; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { height: auto; position: static; }
+    .results-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Gemini is analyzing your quiz...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Smart<br>Curve</div>
+      <div class="logo-sub">Grading intelligence</div>
+      <div class="gemini-badge"><span class="gemini-dot"></span> Powered by Gemini</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Curve strategy</div>
+      <div class="curve-picker">
+        <div class="curve-opt active" data-curve="flat" onclick="setCurve(this)">
+          <div class="curve-opt-name">Flat curve</div>
+          <div class="curve-opt-formula">score + (100 − max)</div>
+        </div>
+        <div class="curve-opt" data-curve="root" onclick="setCurve(this)">
+          <div class="curve-opt-name">Root curve</div>
+          <div class="curve-opt-formula">√score × 10</div>
+        </div>
+        <div class="curve-opt" data-curve="intelligence" onclick="setCurve(this)">
+          <div class="curve-opt-name">Intelligence curve</div>
+          <div class="curve-opt-formula">AI item analysis</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="sidebarStats" style="display:none;">
+      <div class="sidebar-label">Class snapshot</div>
+      <div class="sidebar-stats">
+        <div class="stat-row"><span class="stat-label">Raw avg</span><span class="stat-val" id="sRawAvg">—</span></div>
+        <div class="stat-row"><span class="stat-label">Curved avg</span><span class="stat-val up" id="sCurvedAvg">—</span></div>
+        <div class="stat-row"><span class="stat-label">Pass rate</span><span class="stat-val up" id="sPassRate">—</span></div>
+        <div class="stat-row"><span class="stat-label">Upgraded</span><span class="stat-val up" id="sUpgraded">—</span></div>
+      </div>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">Analyze with Gemini →</button>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="page-head">
+      <h1>Grading analysis</h1>
+      <p>Enter your quiz and student scores. Gemini identifies root causes — Python does the math.</p>
+    </div>
+
+    <!-- Quiz content -->
+    <div class="card">
+      <div class="card-head"><h2>Quiz content</h2></div>
+      <div class="card-body">
+        <textarea class="quiz-textarea" id="quizText" placeholder="Paste your quiz questions and answers here. Gemini will analyze difficulty and fairness.
+
+Q1. What is the powerhouse of the cell? (Answer: Mitochondria)
+Q2. Describe photosynthesis in detail...
+Q3. Calculate the derivative of f(x) = 3x²..."></textarea>
+      </div>
+    </div>
+
+    <!-- Student scores -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Student scores</h2>
+        <button class="add-student" onclick="addStudent()">+ Add student</button>
+      </div>
+      <div class="card-body">
+        <div class="student-grid" id="studentGrid"></div>
+      </div>
+    </div>
+
+    <!-- Results (hidden until analysis) -->
+    <div id="resultsSection" class="hidden">
+
+      <!-- Metrics -->
+      <div class="results-grid" id="metricsGrid"></div>
+
+      <!-- AI Analysis -->
+      <div class="card">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('root')">Root cause</button>
+          <button class="tab-btn" onclick="switchTab('flags')">Question flags</button>
+          <button class="tab-btn" onclick="switchTab('fairness')">Fairness report</button>
+        </div>
+        <div class="tab-panel active" id="tab-root">
+          <div class="analysis-body" id="rootCauseText"></div>
+        </div>
+        <div class="tab-panel" id="tab-flags">
+          <div class="flag-list" id="flagList"></div>
+        </div>
+        <div class="tab-panel" id="tab-fairness">
+          <div class="fairness-text" id="fairnessText"></div>
+        </div>
+      </div>
+
+      <!-- Student impact preview -->
+      <div class="card">
+        <div class="card-head"><h2>Student impact preview</h2></div>
+        <div class="card-body">
+          <div class="bonus-row">
+            <label>Additional bonus</label>
+            <input type="range" id="bonusSlider" min="0" max="20" step="1" value="0" oninput="updateBonus()">
+            <span class="bonus-val" id="bonusVal">+0 pts</span>
+          </div>
+          <div class="impact-banner" id="impactBanner"></div>
+          <table class="grade-table">
+            <thead><tr>
+              <th>Student</th>
+              <th>Raw</th>
+              <th>Curved</th>
+              <th>+ Bonus</th>
+              <th>Change</th>
+            </tr></thead>
+            <tbody id="gradeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Approval -->
+      <div class="card">
+        <div class="card-head"><h2>Teacher approval</h2></div>
+        <div class="card-body">
+          <div class="approval-body">
+            <p class="approval-note">Review the analysis above. Grades will only change after you click <strong>Approve and apply</strong>. Students will always see both their raw score and adjusted score.</p>
+            <div class="btn-row">
+              <button class="btn" onclick="reanalyze()">Re-analyze ↺</button>
+              <button class="btn btn-approve" id="approveBtn" onclick="approveGrades()">Approve and apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /resultsSection -->
+  </main>
+</div>
+
+<script>
+  // ── State ──
+  let selectedCurve = 'flat';
+  let currentGradebook = [];
+  let approved = false;
+
+  let students = [
+    {name:'Alice',   score:72},
+    {name:'Bob',     score:68},
+    {name:'Carol',   score:85},
+    {name:'David',   score:55},
+    {name:'Eva',     score:91},
+    {name:'Frank',   score:61},
+    {name:'Grace',   score:78},
+    {name:'Henry',   score:49},
+  ];
+
+  // ── Init ──
+  buildGrid();
+
+  function buildGrid() {
+    const grid = document.getElementById('studentGrid');
+    grid.innerHTML = '';
+    students.forEach((s, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'student-cell';
+      const grade = letterGrade(s.score);
+      cell.innerHTML = `
+        <label>${s.name}</label>
+        <div class="student-input-wrap">
+          <input class="student-score" type="number" min="0" max="100"
+            value="${s.score}"
+            oninput="students[${i}].score=Math.min(100,Math.max(0,parseFloat(this.value)||0));updateLetter(this,${i})"
+            id="score-${i}" />
+          <span class="student-letter" id="letter-${i}">${grade}</span>
+          <button class="remove-student" onclick="removeStudent(${i})">✕</button>
+        </div>`;
+      grid.appendChild(cell);
+    });
+  }
+
+  function updateLetter(input, i) {
+    document.getElementById(`letter-${i}`).textContent = letterGrade(students[i].score);
+  }
+
+  function addStudent() {
+    students.push({name: `Student ${students.length + 1}`, score: 70});
+    buildGrid();
+  }
+
+  function removeStudent(i) {
+    if (students.length <= 2) return showToast('Need at least 2 students.', true);
+    students.splice(i, 1);
+    buildGrid();
+  }
+
+  function setCurve(el) {
+    document.querySelectorAll('.curve-opt').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    selectedCurve = el.dataset.curve;
+  }
+
+  function letterGrade(s) {
+    if (s >= 90) return 'A';
+    if (s >= 80) return 'B';
+    if (s >= 70) return 'C';
+    if (s >= 60) return 'D';
+    return 'F';
+  }
+
+  function gradeClass(l) { return `grade-${l}`; }
+
+  // ── Analysis ──
+  async function runAnalysis() {
+    const quizText = document.getElementById('quizText').value.trim();
+
+    if (students.length < 2) return showToast('Add at least 2 students.', true);
+
+    setLoading(true);
+    approved = false;
+    document.getElementById('approveBtn').textContent = 'Approve and apply';
+    document.getElementById('approveBtn').classList.remove('applied');
+
+    try {
+      const resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          students,
+          quiz_text: quizText,
+          curve_method: selectedCurve,
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Analysis failed');
+
+      currentGradebook = data.gradebook;
+      renderResults(data);
+      document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('sidebarStats').style.display = 'flex';
+      document.getElementById('bonusSlider').value = 0;
+      updateBonusDisplay(0, data.gradebook);
+      updateSidebarStats(data);
+      document.getElementById('resultsSection').scrollIntoView({behavior:'smooth', block:'start'});
+
+    } catch(e) {
+      showToast(e.message, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResults(data) {
+    const rs = data.raw_stats;
+    const cs = data.curved_stats;
+    const ai = data.analysis;
+
+    // Metrics
+    document.getElementById('metricsGrid').innerHTML = `
+      <div class="metric">
+        <div class="metric-label">Raw average</div>
+        <div class="metric-value">${rs.average}%</div>
+        <div class="metric-sub">Before curve</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Curved average</div>
+        <div class="metric-value">${cs.average}%</div>
+        <div class="metric-delta">+${(cs.average - rs.average).toFixed(1)} pts</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Passing rate</div>
+        <div class="metric-value">${cs.passing_rate_pct}%</div>
+        <div class="metric-delta">${cs.passing_count} of ${students.length} students</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Letter upgrades</div>
+        <div class="metric-value">${data.students_upgraded}</div>
+        <div class="metric-sub">Students moved up</div>
+      </div>`;
+
+    // Root cause
+    const rec = ai.curve_recommendation || selectedCurve;
+    document.getElementById('rootCauseText').innerHTML = `
+      <p>${ai.root_cause || ''}</p>
+      <p style="color:var(--ink-3);font-size:13px;">${ai.competency_gap || ''}</p>
+      <div class="tags-row">
+        <span class="tag tag-blue">Recommended: ${rec.charAt(0).toUpperCase()+rec.slice(1)} curve</span>
+        ${(ai.voided_question_pct||0) > 0 ? `<span class="tag tag-warn">${ai.voided_question_pct}% from voided questions</span>` : ''}
+        <span class="tag tag-green">${data.students_upgraded} upgrades</span>
+      </div>`;
+
+    // Question flags
+    const flags = ai.flagged_questions || [];
+    document.getElementById('flagList').innerHTML = flags.length
+      ? flags.map(f => `
+        <div class="flag-item">
+          <div>
+            <div class="flag-q">${f.question}</div>
+            <div class="flag-issue">${f.issue}</div>
+            ${f.void_recommended
+              ? '<span class="tag tag-warn" style="margin-top:8px;font-size:11px;">Void suggested</span>'
+              : '<span class="tag tag-green" style="margin-top:8px;font-size:11px;">Keep question</span>'}
+          </div>
+          <div class="flag-meta">
+            <div class="flag-pct">${f.miss_rate_pct}%</div>
+            <div class="flag-pct-label">missed</div>
+          </div>
+        </div>`).join('')
+      : '<p style="color:var(--ink-3);font-size:14px;padding:8px 0;">No questions flagged as unfairly difficult.</p>';
+
+    // Fairness report
+    document.getElementById('fairnessText').textContent = ai.fairness_report || '';
+  }
+
+  // ── Bonus slider ──
+  function updateBonus() {
+    const bonus = parseInt(document.getElementById('bonusSlider').value);
+    document.getElementById('bonusVal').textContent = `+${bonus} pts`;
+    updateBonusDisplay(bonus, currentGradebook);
+  }
+
+  function updateBonusDisplay(bonus, gradebook) {
+    let upgrades = 0;
+    const tbody = document.getElementById('gradeTableBody');
+    tbody.innerHTML = '';
+
+    gradebook.forEach(row => {
+      const final = Math.min(100, Math.round((row.curved_score + bonus) * 10) / 10);
+      const fl = letterGrade(final);
+      const delta = Math.round((final - row.raw_score) * 10) / 10;
+      if (fl > row.raw_letter) upgrades++;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.name}</td>
+        <td>${row.raw_score} <span class="grade-pill ${gradeClass(row.raw_letter)}">${row.raw_letter}</span></td>
+        <td>${row.curved_score}</td>
+        <td>${final} <span class="grade-pill ${gradeClass(fl)}">${fl}</span></td>
+        <td class="${delta > 0 ? 'delta-pos' : 'delta-zero'}">${delta > 0 ? '+'+delta : delta === 0 ? '—' : delta}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('impactBanner').textContent =
+      `${upgrades} of ${gradebook.length} students move up at least one letter grade with this curve`;
+  }
+
+  function updateSidebarStats(data) {
+    document.getElementById('sRawAvg').textContent = data.raw_stats.average + '%';
+    document.getElementById('sCurvedAvg').textContent = data.curved_stats.average + '%';
+    document.getElementById('sPassRate').textContent = data.curved_stats.passing_rate_pct + '%';
+    document.getElementById('sUpgraded').textContent = data.students_upgraded + ' students';
+  }
+
+  // ── Tabs ──
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) =>
+      b.classList.toggle('active', ['root','flags','fairness'][i] === name));
+    document.querySelectorAll('.tab-panel').forEach(p =>
+      p.classList.toggle('active', p.id === 'tab-'+name));
+  }
+
+  // ── Approval ──
+  function approveGrades() {
+    if (approved) return;
+    approved = true;
+    const btn = document.getElementById('approveBtn');
+    btn.textContent = '✓ Grades applied';
+    btn.classList.add('applied');
+    showToast('Grades approved and applied. Students will see raw + adjusted scores.');
+  }
+
+  function reanalyze() {
+    document.getElementById('resultsSection').classList.add('hidden');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  // ── UI helpers ──
+  function setLoading(on) {
+    document.getElementById('loadingOverlay').classList.toggle('show', on);
+    document.getElementById('analyzeBtn').disabled = on;
+    document.getElementById('analyzeBtn').textContent = on ? 'Analyzing…' : 'Analyze with Gemini →';
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = 'toast', 3200);
+  }
+</script>
+</body>
+</html>
