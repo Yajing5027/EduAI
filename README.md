@@ -220,3 +220,79 @@ Notes
 data.json is auto-created on first survey generation — do not delete it while the server is running
 The student survey loads questions from localStorage — both teacher and student must use the same browser on the same machine for local testing. For real use, deploy to Railway
 PowerPoint support requires Python 3 and pip install python-pptx
+
+
+
+
+============================================================
+SMART CURVE | QUICK-ANALYSIS EDITION (MANUAL ENTRY)
+============================================================
+
+DESCRIPTION:
+Smart Curve is a lightweight Flask application designed for 
+educators to apply fair grading curves to quiz results. This 
+version uses manual data entry, making it extremely reliable 
+for quick demonstrations and classroom use.
+
+------------------------------------------------------------
+1. PREREQUISITES
+------------------------------------------------------------
+- Python 3.10 or higher installed.
+- A Google Gemini API Key (from https://aistudio.google.com/).
+
+------------------------------------------------------------
+2. INSTALLATION
+------------------------------------------------------------
+Open your terminal or command prompt and run:
+
+    pip install flask requests python-dotenv
+
+------------------------------------------------------------
+3. SETUP
+------------------------------------------------------------
+1. Create a file named ".env" in the same folder as app.py.
+2. Add your API key inside the .env file like this:
+   
+   GEMINI_API_KEY=your_actual_key_here
+
+3. Ensure "index.html" is located inside a folder named 
+   "templates".
+
+------------------------------------------------------------
+4. RUNNING THE APP
+------------------------------------------------------------
+Run the following command in your terminal:
+
+    python app.py
+
+Once running, open your web browser and go to: 
+http://127.0.0.1:5000
+
+------------------------------------------------------------
+5. THE INTELLIGENCE CURVE (AI-POWERED)
+------------------------------------------------------------
+The Intelligence Curve is a unique feature that uses Google 
+Gemini to analyze if a quiz was "unfair" due to poor wording 
+or curriculum gaps.
+
+HOW IT WORKS:
+1. The AI looks at the quiz content and score distribution.
+2. If the AI detects a high failure rate on specific topics, 
+   it calculates a "Voided Question Percentage."
+3. The backend math then adjusts the total possible points, 
+   effectively removing the "bad" questions from the grade 
+   without penalizing students.
+
+This ensures that students are graded on what they actually 
+learned, rather than being punished for confusing questions.
+
+------------------------------------------------------------
+6. OTHER MATH MODELS USED
+------------------------------------------------------------
+- FLAT CURVE: Adds points based on the highest score.
+- ROOT CURVE: Lifts lower scores more aggressively using 
+  the Square Root of Score * 10 formula.
+
+------------------------------------------------------------
+Developed for academic projects at MNSU, Mankato.
+============================================================
