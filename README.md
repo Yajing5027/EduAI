@@ -1,14 +1,16 @@
-# Top-one (EduAI) — Teacher-focused Survey Generator
+# EduAI — Teacher-focused Toolkit
+
+Jump to: [Survey Flow](#survey-flow) · [Smart Curve](#smart-curve)
 
 Purpose
 -------
-Top-one helps teachers quickly gauge student understanding after a lecture. Teachers paste or upload slide text, the system generates concise comprehension questions, and students rate their confidence. Results give an immediate, actionable view of which concepts the class understands and which need review.
+EduAI helps teachers quickly gauge student understanding after a lecture by combining two complementary capabilities in one workflow: an in-class survey flow that generates, publishes, and collects responses to comprehension questions, and a Smart Curve tool for fair, interpretable score adjustments. Both features target the same classroom users and are presented together so teachers can choose one or both in their practice.
 
-Core flow
--------------------------
-- Teacher: paste slide text → set number of questions → Generate (preview)
-- Teacher: review previewed questions → Publish
-- Results: open Survey Results → the same questions from the preview appear under "Survey questions"; aggregated ratings and short AI summaries are shown above
+## Survey Flow
+This feature produces concise comprehension questions from slide text, lets teachers preview and publish a survey, and collects student confidence ratings. The published survey preserves the previewed questions exactly so results map directly to teacher intent.
+
+## Smart Curve
+The Smart Curve component provides classroom-focused, explainable score adjustments and analysis to help teachers interpret aggregate results. It can be used independently or together with the Survey Flow.
 
 Why this matters
 -----------------
@@ -16,16 +18,41 @@ Why this matters
 - Actionable signals (per-topic scores and class average) to guide remediation.
 - Low-friction workflow focused on teacher usability.
 
-Key features
-------------
-- AI-assisted question generation from slide text
-- Preview → Publish mapping: previewed questions are preserved and shown in results
-- Shareable student link for quick response collection
+Features
+--------
+Below are the two integrated features of EduAI. They share the same target users (teachers) and can be used together or independently.
+
+### Survey Flow
+Description
+- Generates concise comprehension questions from slide text, allows teachers to preview and edit, then publish the exact same questions as a student-facing survey.
+
+Highlights
+- Preserves previewed questions on publish so results map directly to teacher intent.
+- Quick shareable student link for in-class responses.
+- Aggregated per-question confidence ratings and short AI summaries.
+
+Usage
+- Teacher pastes slide text → chooses number of questions → Generate (preview) → review and Publish → view Results.
+
+### Smart Curve
+Description
+- Provides classroom-focused, explainable score adjustments and tools to interpret aggregate results (e.g., voiding badly-performing questions, applying flat or root-based lifts).
+
+Highlights
+- Explainable models: Voided Question Percentage, Flat Curve, Root Curve.
+- Designed to help teachers adjust scores fairly when question wording or curriculum gaps skew results.
+
+Usage
+- Manual data entry or CSV import → choose curve model → apply adjustments → review adjusted aggregates.
 
 Implementation notes (brief)
 ---------------------------
 - Frontend: static single-page app under `frontend/` — core logic in `frontend/app.js`.
-- Prototypes for parsing and AI integration exist under `frontend/legacy/` and `Smart Curve/`, but evaluation should focus on the front-end preview→publish→results behavior.
+- Prototypes for parsing and AI integration exist under `frontend/legacy/` and `Smart Curve/`.
+
+Appendix: Smart Curve Detailed Manual
+-----------------------------------
+The detailed Smart Curve manual follows for teachers who want step-by-step installation and operation. Content retained verbatim.
 
 ---
 
@@ -50,7 +77,7 @@ for quick demonstrations and classroom use.
 ---
 Open your terminal or command prompt and run:
 
-	 pip install flask requests python-dotenv
+	pip install flask requests python-dotenv
 
 ---
 3. SETUP
@@ -58,17 +85,17 @@ Open your terminal or command prompt and run:
 1. Create a file named ".env" in the same folder as app.py.
 2. Add your API key inside the .env file like this:
 
-	GEMINI_API_KEY=your_actual_key_here
+   GEMINI_API_KEY=your_actual_key_here
 
 3. Ensure "index.html" is located inside a folder named 
-	"templates".
+   "templates".
 
 ---
 4. RUNNING THE APP
 ---
 Run the following command in your terminal:
 
-	 python app.py
+	python app.py
 
 Once running, open your web browser and go to: 
 http://127.0.0.1:5000
