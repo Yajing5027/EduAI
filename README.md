@@ -27,10 +27,10 @@ Implementation notes (brief)
 - Frontend: static single-page app under `frontend/` — core logic in `frontend/app.js`.
 - Prototypes for parsing and AI integration exist under `frontend/legacy/` and `Smart Curve/`, but evaluation should focus on the front-end preview→publish→results behavior.
 - Prototypes for parsing and AI integration exist under `frontend/legacy/` and `Smart Curve/`, but evaluation should focus on the front-end preview→publish→results behavior.
-
 ============================================================
 
 SMART CURVE | QUICK-ANALYSIS EDITION (MANUAL ENTRY)
+
 ============================================================
 
 DESCRIPTION:
