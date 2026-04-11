@@ -169,7 +169,15 @@ function showGradeResults() {
         <div class="bar-pct" style="color:${color}">${c.avg}%</div>
       </div>`;
   });
-  updateThresh(70);
+  const classAvg = Math.round((GRADE_CONCEPTS.reduce((s, c) => s + (c.avg || 0), 0) / (GRADE_CONCEPTS.length || 1)));
+  const classAvgEl = document.getElementById('ga-class-average');
+  if (classAvgEl) classAvgEl.textContent = classAvg + '%';
+  const conceptsEl = document.getElementById('ga-concepts-tracked');
+  if (conceptsEl) conceptsEl.textContent = GRADE_CONCEPTS.length;
+  const studentsEl = document.getElementById('ga-students');
+  if (studentsEl && !studentsEl.textContent.trim()) studentsEl.textContent = '20';
+  const threshVal = parseInt(document.getElementById('thresh-slider')?.value || document.getElementById('thresh-in')?.value || 70, 10);
+  updateThresh(threshVal);
   document.getElementById('ga-step1').style.display = 'none';
   document.getElementById('ga-step2').style.display = 'block';
 }
@@ -187,11 +195,47 @@ function resetGrades() {
 }
 
 function updateThresh(v) {
-  document.getElementById('thresh-disp').textContent = v + '%';
+  const disp = document.getElementById('thresh-disp');
+  if (disp) disp.textContent = v + '%';
   const passing = GRADE_CONCEPTS.filter(c => c.avg >= v).length;
-  const approx = Math.round((passing / GRADE_CONCEPTS.length) * 20);
-  document.getElementById('pass-note').textContent = `At ${v}% — approx. ${approx} / 20 students pass`;
-  document.getElementById('ga-pass-rate').textContent = Math.round((approx / 20) * 100) + '%';
+  const approx = Math.round((passing / (GRADE_CONCEPTS.length || 1)) * 20);
+  const passNote = document.getElementById('pass-note');
+  if (passNote) passNote.textContent = `At ${v}% — approx. ${approx} / 20 students pass`;
+  const passRate = document.getElementById('ga-pass-rate');
+  if (passRate) passRate.textContent = Math.round((approx / 20) * 100) + '%';
 }
 
+function renderDashboard() {
+  const surveys = Object.values(SURVEY_DATA || {});
+  const surveysCreated = Object.keys(SURVEY_DATA || {}).length;
+  const totalResponses = surveys.reduce((s, cur) => s + (cur.responses || 0), 0);
+  const weightedAvg = totalResponses ? Math.round((surveys.reduce((s, cur) => s + ((cur.avg || 0) * (cur.responses || 0)), 0) / totalResponses) * 10) / 10 : (surveys.length ? Math.round((surveys.reduce((s, cur) => s + (cur.avg || 0), 0) / surveys.length) * 10) / 10 : 0);
+  const studentsReached = totalResponses;
+  const gradeReports = 1; // kept local: number of available grade reports (sample data)
+
+  const elSurveysCreated = document.getElementById('db-surveys-created');
+  if (elSurveysCreated) elSurveysCreated.textContent = surveysCreated;
+  const elAvg = document.getElementById('db-avg-understanding');
+  if (elAvg) elAvg.innerHTML = `${weightedAvg}<span style="font-size:14px;font-weight:400"> / 10</span>`;
+  const elStudents = document.getElementById('db-students-reached');
+  if (elStudents) elStudents.textContent = studentsReached;
+  const elGradeReports = document.getElementById('db-grade-reports');
+  if (elGradeReports) elGradeReports.textContent = gradeReports;
+
+  const recentContainer = document.getElementById('recent-surveys-list');
+  if (recentContainer) {
+    recentContainer.innerHTML = '';
+    const keys = Object.keys(SURVEY_DATA || {});
+    keys.sort().reverse().forEach(k => {
+      const d = SURVEY_DATA[k];
+      const row = document.createElement('div');
+      row.className = 'activity-row';
+      row.innerHTML = `<div class="activity-title">${d.title}</div><div class="activity-meta">${d.responses} responses • ${d.avg}/10 avg</div>`;
+      recentContainer.appendChild(row);
+    });
+  }
+}
+
+// render dashboard metrics computed from local page data, then show a default survey
+renderDashboard();
 loadSurveyResult('wk5');
