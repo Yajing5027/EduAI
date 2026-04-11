@@ -108,7 +108,7 @@ function generatePreview() {
 function publishSurvey() {
   const label = document.getElementById('sc-label').textContent;
   const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  document.getElementById('share-link').textContent = `eduai.app/survey/${slug}`;
+  document.getElementById('share-link').textContent = `http://localhost:3000/studentSurvey.html`;
   document.getElementById('sc-step1').style.display = 'none';
   document.getElementById('sc-step2').style.display = 'none';
   document.getElementById('sc-step3').style.display = 'block';
