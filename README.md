@@ -69,4 +69,3 @@ The **Intelligence Curve** is our flagship feature that uses **Google Gemini** t
 
 ---
 *Developed for academic projects at MNSU, Mankato.*
-```
